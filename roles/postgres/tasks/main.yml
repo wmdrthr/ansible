@@ -1,0 +1,36 @@
+---
+
+- name: Install postgres
+  ansible.builtin.apt:
+    name: postgresql-15
+    state: present
+
+- name: Replace postgresql.conf file
+  ansible.builtin.copy:
+    src: files/pg_hba.conf
+    dest: /etc/postgresql/15/main/pg_hba.conf
+    backup: true
+
+- name: Replace pg_hba.conf file
+  ansible.builtin.copy:
+    src: files/postgresql.conf
+    dest: /etc/postgresql/15/main/postgresql.conf
+    backup: true
+
+- name: Restart the database server
+  ansible.builtin.service:
+    name: postgresql
+    state: restarted
+
+- name: Install psycopg2
+  ansible.builtin.apt:
+    name: python3-psycopg2
+    state: present
+
+- name: Create the main database user
+  community.postgresql.postgresql_user:
+    name: sobornost
+    password: sobornost # TODO: replace with hashed value
+    role_attr_flags: LOGIN,CREATEDB
+  environment:
+    PGOPTIONS: "-c password_encryption=scram-sha-256"
