@@ -1,0 +1,33 @@
+---
+
+- name: Create the group
+  group: name=weemadarthur
+  tags: user
+
+- name: Create the user
+  user:
+    name: weemadarthur
+    group: weemadarthur
+    groups:
+      - users
+    state: present
+    home: /home/weemadarthur
+    shell: /usr/bin/bash
+  tags: user
+
+- name: Give the user sudo privileges
+  copy: dest=/etc/sudoers.d/weemadarthur content="weemadarthur ALL=(ALL) NOPASSWD:ALL" owner=root group=root mode=0440
+  tags: user
+  when: ansible_system == "Linux"
+
+- name: Give the user sudo privileges
+  copy: dest=/usr/local/etc/sudoers.d/weemadarthur content="weemadarthur ALL=(ALL) NOPASSWD:ALL" owner=root group=wheel mode=0440
+  tags: user
+  when: ansible_system == "FreeBSD"
+
+- name: Copy SSH public keys
+  ansible.posix.authorized_key:
+    user: weemadarthur
+    state: present
+    key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_ed25519_local.pub') }}"
+  tags: user

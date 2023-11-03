@@ -1,0 +1,59 @@
+---
+# SSH server configuration
+
+- name: Remove all existing host public keys
+  file: path=/etc/ssh/ssh_host_{{ item }}_key.pub state=absent
+  with_items:
+    - dsa
+    - rsa
+    - ecdsa
+    - ed25519
+  tags: security
+
+- name: Remove all existing host private keys
+  file: path=/etc/ssh/ssh_host_{{ item }}_key state=absent
+  with_items:
+    - dsa
+    - rsa
+    - ecdsa
+    - ed25519
+  tags: security
+
+- name: Add new RSA host key
+  shell: /usr/bin/ssh-keygen -q -t rsa -b 4096 -N "" -C "{{ inventory_hostname }} `date -u +'%Y-%m-%dT%H:%M:%SZ'`" -f /etc/ssh/ssh_host_rsa_key
+  tags: security
+
+- name: Save the RSA host key fingerprint
+  command: /usr/bin/ssh-keygen -l -f /etc/ssh/ssh_host_rsa_key
+  register: ssh_host_rsa_public_key
+  tags: security
+
+- name: Add new ED25519 host key
+  shell: /usr/bin/ssh-keygen -q -t ed25519 -N "" -C "{{ inventory_hostname }} `date -u +'%Y-%m-%dT%H:%M:%SZ'`" -f /etc/ssh/ssh_host_ed25519_key
+  tags: security
+
+- name: Save the ED25519 host key fingerprint
+  command: /usr/bin/ssh-keygen -l -f /etc/ssh/ssh_host_ed25519_key
+  register: ssh_host_ed25519_public_key
+  tags: security
+
+- name: Remove the existing prime moduli file
+  file: path=/etc/ssh/moduli state=absent
+  tags: security
+
+- name: Copy the new prime moduli file
+  copy: src=files/moduli-4096 dest=/etc/ssh/moduli owner=root group=root mode=0400
+  tags: security
+
+- name: Copy over the sshd_config file
+  template:
+    src: templates/sshd_config.j2
+    dest: /etc/ssh/sshd_config
+    owner: root
+    group: root
+    mode: 0400
+  tags: security
+
+- name: Restart the SSH server
+  service: name=sshd state=restarted
+  tags: security

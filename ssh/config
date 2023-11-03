@@ -1,0 +1,7 @@
+Host *
+     IdentitiesOnly yes
+     StrictHostKeyChecking accept-new
+     ControlMaster no
+     ForwardAgent yes
+     IdentityAgent none
+     UserKnownHostsFile ssh/known_hosts
